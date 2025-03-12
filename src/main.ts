@@ -11,6 +11,7 @@ async function main() {
   const app = new Application<HTMLCanvasElement>({
     width: window.innerWidth,
     height: window.innerHeight,
+    // background: 0xffffff,
   });
 
   await AssetLoader.getInstance().load(gameConfig);

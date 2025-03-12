@@ -54,7 +54,12 @@ export class AssetLoader {
     }
 
     const symbols = this.loadedTextures.symbols;
-    return symbols[Math.floor(Math.random() * symbols.length)];
+    let randomIndex = Math.floor(Math.random() * symbols.length);
+    /*while ( randomIndex === 0 ) {
+        randomIndex = Math.floor(Math.random() * symbols.length);
+    }*/
+
+    return symbols[randomIndex];
   }
 
   getTexture<K extends keyof GameConfig["assets"]>(name: K) {
