@@ -1,10 +1,11 @@
 import gsap from "gsap";
 import { Container } from "pixi.js";
 
-import {GameConfig, MockResult, mockResults} from "./config";
+import {GameConfig} from "./config";
 import { ReelArea, ReelAreaEvents } from "./ReelArea";
 import { SpinButton } from "./SpinButton";
 import { StopButton } from "./StopButton";
+import { MockResult, mockResults } from "./mockResults.ts";
 
 export class Game extends Container {
   private spinButton: SpinButton;

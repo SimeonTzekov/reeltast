@@ -1,8 +1,9 @@
 import gsap from "gsap";
 import {Container, Graphics} from "pixi.js";
 
-import {GameConfig, MockResult} from "./config";
+import {GameConfig} from "./config";
 import {Reel, ReelEvents, ReelSpinDirection} from "./Reel";
+import {MockResult} from "./mockResults.ts";
 
 export enum ReelAreaEvents {
   allStartedSpinning = "allStartedSpinning",
@@ -36,12 +37,12 @@ export class ReelArea extends Container {
     this.stopInterval = config.stopInterval;
     this.startInterval = config.startInterval;
 
-    // this.mask = new Graphics()
-    //   .beginFill(0xffffff)
-    //   .drawRect(0, 0, config.reelAreaWidth, config.reelAreaHeight)
-    //   .endFill();
-    //
-    // this.addChild(this.mask);
+    this.mask = new Graphics()
+      .beginFill(0xffffff)
+      .drawRect(0, 0, config.reelAreaWidth, config.reelAreaHeight)
+      .endFill();
+
+    this.addChild(this.mask);
 
     this.addChild(
       new Graphics()

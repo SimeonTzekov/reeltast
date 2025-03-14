@@ -146,7 +146,8 @@ export class Reel extends Container {
                           this.stopSpinning();
                         }
                     } else {
-                        symbol.sprite.texture = AssetLoader.getInstance().getRandomSymbolTexture();
+                        // symbol.sprite.texture = AssetLoader.getInstance().getRandomSymbolTexture();
+                        symbol.switchTexture(AssetLoader.getInstance().getRandomSymbolTexture());
                     }
                 }
             } else {
