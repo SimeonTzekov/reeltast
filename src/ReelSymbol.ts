@@ -92,4 +92,14 @@ export class ReelSymbol extends Container {
       ease: "power1.inOut"
     });
   }
+
+  public dropToPosition(position: number, delay = 0) {
+    console.log('   ReelSymbol', this.id,  'dropToPosition', position);
+    return gsap.to(this, {
+      y: position * this.dim.height,
+      delay: delay,
+      duration: 500,
+      ease: "power1.in",
+    });
+  }
 }

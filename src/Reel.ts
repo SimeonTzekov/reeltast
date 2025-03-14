@@ -1,9 +1,9 @@
 import gsap from "gsap";
-import { Container } from "pixi.js";
+import {Container} from "pixi.js";
 
-import { ReelSymbol } from "./ReelSymbol";
-import { AssetLoader } from "./AssetLoader";
-import { GameConfig } from "./config";
+import {ReelSymbol} from "./ReelSymbol";
+import {AssetLoader} from "./AssetLoader";
+import {GameConfig, GameReelingType} from "./config";
 
 export enum ReelEvents {
   stoppedSpinning = "stoppedSpinning",
@@ -16,7 +16,7 @@ export enum ReelSpinDirection {
 }
 
 export class Reel extends Container {
-  private symbols: ReelSymbol[];
+  private symbols: ReelSymbol[] = [];
 
   /** if the reel is currently in the stopping animation */
   private stopping = false;
@@ -63,9 +63,7 @@ export class Reel extends Container {
     // this.symbolHeight = 120;
     this.spinningTweenDuration = 1000 / (config.symbolsPerReel * config.spinningSpeed);
 
-    // this.ancor.x.set(0.5);
-
-    this.symbols = [];
+    // this.symbols = [];
     this.createSymbols();
   }
 
@@ -284,6 +282,7 @@ export class Reel extends Container {
   private createSymbols() {
     console.log(' Reel createSymbols');
 
+
     this.symbols = Array.from(
       // while animating, we see two halves of 2 different symbols on the top and bottom, so it +1 symbols in total
       {length: this.config.symbolsPerReel + 1},
@@ -302,18 +301,34 @@ export class Reel extends Container {
       this.addChild(symbol);
     }
 
-    this.positionSymbols();
+    if (this.config.reelingType === GameReelingType.Regular) {
+      this.positionSymbols();
+    } else {
+      this.dropSymbols();
+    }
   }
 
   private positionSymbols() {
-    console.log(' Reel positionSymbols');
-    for (const [i, symbol] of this.symbols.entries()) {
-      // the first symbol is actually placed above the reel area so while moving down there won't be a blank space
-      if (this.spinDirection === ReelSpinDirection.down) {
-        symbol.y = (i - 1) * this.symbolHeight;
-      } else {
-        symbol.y = (i) * this.symbolHeight;
+    console.log(' Reel positionSymbols', this.config.reelingType);
+
+    if (this.config.reelingType === GameReelingType.Regular) {
+      for (const [i, symbol] of this.symbols.entries()) {
+        // the first symbol is actually placed above the reel area so while moving down there won't be a blank space
+        if (this.spinDirection === ReelSpinDirection.down) {
+          symbol.y = (i - 1) * this.symbolHeight;
+        } else {
+          symbol.y = (i) * this.symbolHeight;
+        }
       }
     }
+  }
+
+  private dropSymbols() {
+    console.log('  Reel dropSymbols');
+
+  const symbolsToDrop = this.symbols.slice(0, this.symbols.length - 1);
+    symbolsToDrop.forEach((symbol, i) => {
+      symbol.dropToPosition(symbolsToDrop.length - i - 1, i * 100 );
+    });
   }
 }

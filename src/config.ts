@@ -3,15 +3,23 @@
 // demo. In a real project it would probably come from the outside world and
 // I would define a zod schema for the type and validate the config using it
 
+export enum GameReelingType {
+  Regular = "Regular",
+  Tumbling = "Tumbling"
+}
+
+const reelsCount = 1;
+
 export const gameConfig = {
   assets: {
     symbols: ["cherry.png", "plum.png", "orange.png", "apple.png", "grapes.png", "watermelon.png"],
     spinButton: "spin.png",
     stopButton: "stop.png",
   },
-  reelsCount: 6,
+  reelingType: "Tumbling" as GameReelingType,
+  reelsCount: reelsCount,
   symbolsPerReel: 4,
-  reelAreaWidth: 133 * 6, // px
+  reelAreaWidth: 133 * reelsCount, // px
   // reelAreaWidth: 130, // px
   reelAreaHeight: 400, // px
   spinButtonSize: 150, // px

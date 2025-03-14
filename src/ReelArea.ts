@@ -37,12 +37,12 @@ export class ReelArea extends Container {
     this.stopInterval = config.stopInterval;
     this.startInterval = config.startInterval;
 
-    this.mask = new Graphics()
+   /* this.mask = new Graphics()
       .beginFill(0xffffff)
       .drawRect(0, 0, config.reelAreaWidth, config.reelAreaHeight)
       .endFill();
 
-    this.addChild(this.mask);
+    this.addChild(this.mask);*/
 
     this.addChild(
       new Graphics()
@@ -159,6 +159,8 @@ export class ReelArea extends Container {
   private createReels() {
     console.log(' ReelArea createSymbols');
 
+    // return;
+
     // const symbolWidth = config.reelAreaWidth / config.reelsCount;
     const symbolWidth = 133;
     const symbolHeight = 105;
@@ -182,7 +184,6 @@ export class ReelArea extends Container {
         this.reelsFinishedSpinningCount++;
         if (this.reelsFinishedSpinningCount === this.reels.length) {
           this.emit(ReelAreaEvents.allStoppedSpinning);
-          // console.log('!!!!!!', this.resultState)
           if (this.resultState) {
             this.emit(ReelAreaEvents.allStoppedWithResult);
           }
@@ -202,8 +203,6 @@ export class ReelArea extends Container {
         }
       });
     }
-
-    // this.setDirection('UPDOWN')
 
   }
 

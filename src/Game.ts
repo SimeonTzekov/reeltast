@@ -8,8 +8,9 @@ import { StopButton } from "./StopButton";
 import { MockResult, mockResults } from "./mockResults.ts";
 
 export class Game extends Container {
-  private spinButton: SpinButton;
-  private stopButton: StopButton;
+  private config: GameConfig;
+  private spinButton: SpinButton = new SpinButton();
+  private stopButton: StopButton = new StopButton();
   private reelArea: ReelArea;
   private resultState: MockResult | null = null;
   private uiDebugBtns: { [key: string]: { [key: string]: Element } } = {};
@@ -17,55 +18,23 @@ export class Game extends Container {
   constructor(config: GameConfig) {
     console.log('new Game', config);
     super();
+    this.config = config;
+
+    this.initUIButtons();
 
     const reelArea = new ReelArea(config);
     this.addChild(reelArea);
-
     this.reelArea = reelArea;
 
-    this.spinButton = new SpinButton();
-    this.stopButton = new StopButton();
-
-    [this.spinButton, this.stopButton].forEach((button) => {
-      button.position.set(config.reelAreaWidth, config.reelAreaHeight / 2);
-      button.anchor.set(0, 0.5);
-      button.width = config.spinButtonSize;
-      button.height = config.spinButtonSize;
-      this.addChild(button);
-    });
-
-    this.stopButton.visible = false;
-
-    this.spinButton.on("click", () => {
-      reelArea.startSpinning();
-      this.showStopButton();
-      this.stopButton.disable();
-
-      gsap.delayedCall(config.autoStopTimeout, () => {
-        this.mockResult(mockResults[Math.floor(Math.random() * mockResults.length)]);
-      });
-    });
-
-    this.stopButton.on("click", () => {
-      // reelArea.stopSpinning();
-      // this.mockResult();
-      this.mockResult( mockResults[ Math.floor(Math.random() * mockResults.length) ] );
-      this.showSpinButton();
-      this.spinButton.disable();
-    });
 
     reelArea.on(ReelAreaEvents.allStoppedSpinning, () => {
       console.warn('Game ReelAreaEvent allStoppedSpinning');
-      // this.showSpinButton();
-      // this.spinButton.enable();
 
       if (this.resultState) {
         if (this.resultState.winLines.length) {
           reelArea.showWinLines(this.resultState.winLines);
         }
-        // this.resultState = null;
       }
-
     });
 
     reelArea.on(ReelAreaEvents.allStartedSpinning, () => {
@@ -75,10 +44,6 @@ export class Game extends Container {
 
     reelArea.on(ReelAreaEvents.allStartedStoppingWithResult, () => {
       console.warn('Game ReelAreaEvent allStartedStoppingWithResult');
-      // this.resultState = null;
-      // this.stopButton.enable();
-      // console.log(this.resultState);
-      // this.stopButton.disable();
       this.spinButton.disable();
       this.showSpinButton();
     });
@@ -90,22 +55,51 @@ export class Game extends Container {
         this.showSpinButton();
         this.spinButton.enable();
       }
-      // this.resultState = null;
-      // this.stopButton.enable();
-      // console.log(this.resultState);
     });
 
     reelArea.on(ReelAreaEvents.allWinLinesShown, () => {
       console.warn('Game ReelAreaEvent allLinesShown');
-      // this.resultState = null;
-      // this.stopButton.enable();
-      // console.log(this.resultState);
+
       this.showSpinButton();
       this.spinButton.enable();
-
     });
 
-    this.initDebugBtns();
+    // this.initDebugBtns();
+  }
+
+  private initUIButtons() {
+    console.log('Game initUIButtons');
+
+    // this.spinButton = new SpinButton();
+    // this.stopButton = new StopButton();
+
+    [this.spinButton, this.stopButton].forEach((button) => {
+      button.position.set(this.config.reelAreaWidth, this.config.reelAreaHeight / 2);
+      button.anchor.set(0, 0.5);
+      button.width = this.config.spinButtonSize;
+      button.height = this.config.spinButtonSize;
+      this.addChild(button);
+    });
+
+    this.stopButton.visible = false;
+
+    this.spinButton.on("click", () => {
+      this.reelArea.startSpinning();
+      this.showStopButton();
+      this.stopButton.disable();
+
+      gsap.delayedCall(this.config.autoStopTimeout, () => {
+        this.mockResult(mockResults[Math.floor(Math.random() * mockResults.length)]);
+      });
+    });
+
+    this.stopButton.on("click", () => {
+      // reelArea.stopSpinning();
+      // this.mockResult();
+      this.mockResult( mockResults[ Math.floor(Math.random() * mockResults.length) ] );
+      this.showSpinButton();
+      this.spinButton.disable();
+    });
   }
 
   private initDebugBtns() {
