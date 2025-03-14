@@ -1,4 +1,5 @@
 import {Sprite, Texture, Text, Container} from "pixi.js";
+import gsap from "gsap";
 
 export class ReelSymbol extends Container {
   private readonly text: Text;
@@ -34,5 +35,23 @@ export class ReelSymbol extends Container {
     this.text.text = this.id;
 
     // this.addChild(this.text);
+  }
+
+  public winAnimation() {
+    gsap.to(this.sprite, {
+      alpha: 0.65,
+      duration: 250,
+      repeat: 3,
+      yoyo: true,
+      ease: "power1.inOut",
+    });
+    return gsap.to(this.sprite.scale, {
+      x: this.sprite.scale.x * 1.1,
+      y: this.sprite.scale.y * 1.1,
+      duration: 250,
+      yoyo: true,
+      repeat: 1,
+      ease: "power1.inOut"
+    });
   }
 }

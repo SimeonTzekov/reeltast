@@ -71,7 +71,7 @@ export class Reel extends Container {
 
   public override on(
     event: ReelEvents | Parameters<Container["on"]>[0],
-    callback: (payload) => void
+    callback: (payload: number) => void
   ) {
     return super.on(event, callback);
   }
@@ -266,22 +266,7 @@ export class Reel extends Container {
 
     winSymbols.forEach((symbol) => {
 
-      gsap.to(symbol.scale, {
-        x: symbol.scale.x * 1.1,
-        y: symbol.scale.y * 1.1,
-        duration: 250,
-        yoyo: true,
-        repeat: 1,
-        ease: "power1.inOut"
-      });
-
-      gsap.to(symbol, {
-        alpha: 0.65,
-        duration: 250,
-        repeat: 3,
-        yoyo: true,
-        ease: "power1.inOut",
-      }).then(() => {
+     symbol.winAnimation().then(() => {
         // console.warn('  ReelSymbol ', symbol.id, 'winLineShown');
         winSymbolsShownCount++;
         if (winSymbolsShownCount === winSymbols.length) {
