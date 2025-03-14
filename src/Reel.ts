@@ -7,6 +7,7 @@ import { GameConfig } from "./config";
 
 export enum ReelEvents {
   stoppedSpinning = "stoppedSpinning",
+  winLineShown = "winLinesShown",
 }
 
 export enum ReelSpinDirection {
@@ -16,7 +17,6 @@ export enum ReelSpinDirection {
 
 export class Reel extends Container {
   private symbols: ReelSymbol[];
-  // public symbols: ReelSymbol[];
 
   /** if the reel is currently in the stopping animation */
   private stopping = false;
@@ -43,52 +43,35 @@ export class Reel extends Container {
   // private spinDirection: ReelSpinDirection = ReelSpinDirection.up;
   private spinDirection: ReelSpinDirection = ReelSpinDirection.down;
   private resultReceived = false;
-  private id: number;
+  private readonly id: number;
 
   private displayResult: number[] = [];
+  private config: GameConfig;
 
   constructor(config: GameConfig, id: number) {
     console.log('   new Reel', id);
     super();
 
     this.id = id;
+    this.config = config;
 
     this.reelAreaWidth = config.reelAreaWidth;
     this.reelAreaHeight = config.reelAreaHeight;
-    this.symbolWidth = this.reelAreaWidth / config.reelsCount;
+    // this.symbolWidth = this.reelAreaWidth / config.reelsCount;
     this.symbolHeight = this.reelAreaHeight / config.symbolsPerReel;
-    // this.symbolWidth = 133;
+    this.symbolWidth = 120;
     // this.symbolHeight = 120;
-    this.spinningTweenDuration =
-      1000 / (config.symbolsPerReel * config.spinningSpeed);
+    this.spinningTweenDuration = 1000 / (config.symbolsPerReel * config.spinningSpeed);
 
-    this.symbols = Array.from(
-      // while animating, we see two halves of 2 different symbols on the top and bottom, so it +1 symbols in total
-      {length: config.symbolsPerReel + 1},
-      (_, index) => {
-         return new ReelSymbol(
-            AssetLoader.getInstance().getRandomSymbolTexture(),
-            this.symbolWidth,
-            this.symbolHeight,
-            parseInt(id + '' + index)
-          )
-      }
-    );
+    // this.ancor.x.set(0.5);
 
-    for (const [i, symbol] of this.symbols.entries()) {
-      // the first symbol is actually placed above the reel area so while moving down there won't be a blank space
-        if (this.spinDirection === ReelSpinDirection.down) {
-            symbol.y = (i - 1) * this.symbolHeight;
-        } else {
-            symbol.y = (i) * this.symbolHeight;
-        }
-      this.addChild(symbol);
-    }
+    this.symbols = [];
+    this.createSymbols();
   }
 
   public override on(
     event: ReelEvents | Parameters<Container["on"]>[0],
-    callback: () => void
+    callback: (payload) => void
   ) {
     return super.on(event, callback);
   }
@@ -143,51 +126,51 @@ export class Reel extends Container {
 
 /** moves all symbols 1 position down, and puts a random symbol on the top
    when the spinning animation is reset, the reel will go back one place, and the symbols down one place, visually staying in the same place */
-private loopReel() {
-      // console.log('  Reel loopReel', this.spinDirection, this.resultReceived, this.displayResult)
+  private loopReel() {
+        // console.log('  Reel loopReel', this.spinDirection, this.resultReceived, this.displayResult)
 
-      const eps = 0.1;
-      for (const symbol of this.symbols) {
-          if (this.spinDirection === ReelSpinDirection.down) {
-              symbol.position.y += this.symbolHeight;
-              // only the last reel will be close to the boundary
-              // we use reuse it as the random symbol and move it to the top
-              if (symbol.position.y >= this.reelAreaHeight - eps) {
-                  symbol.position.y = -this.symbolHeight;
-                  if (this.resultReceived) {
-                      const resultTextureId = this.displayResult.pop();
-                      if (resultTextureId !== undefined) {
-                          symbol.texture = AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1];
-                      }
-                      if (this.displayResult.length === 0) {
-                        this.stopSpinning();
-                      }
-                  } else {
-                      symbol.texture = AssetLoader.getInstance().getRandomSymbolTexture();
-                  }
-              }
-          } else {
-              symbol.position.y -= this.symbolHeight;
-              if (symbol.position.y < 0 - eps) {
-                  symbol.position.y = this.symbols.length * this.symbolHeight - this.symbolHeight;
-
-                  if (this.resultReceived) {
-                      const resultTextureId = this.displayResult.shift();
-                      if (resultTextureId !== undefined) {
-                          symbol.texture = AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1];
-                      }
-                      if (this.displayResult.length === 0) {
+        const eps = 0.1;
+        for (const symbol of this.symbols) {
+            if (this.spinDirection === ReelSpinDirection.down) {
+                symbol.position.y += this.symbolHeight;
+                // only the last reel will be close to the boundary
+                // we use reuse it as the random symbol and move it to the top
+                if (symbol.position.y >= this.reelAreaHeight - eps) {
+                    symbol.position.y = -this.symbolHeight;
+                    if (this.resultReceived) {
+                        const resultTextureId = this.displayResult.pop();
+                        if (resultTextureId !== undefined) {
+                            symbol.sprite.texture = AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1];
+                        }
+                        if (this.displayResult.length === 0) {
                           this.stopSpinning();
-                      }
-                  } else {
-                      symbol.texture = AssetLoader.getInstance().getRandomSymbolTexture();
-                  }
+                        }
+                    } else {
+                        symbol.sprite.texture = AssetLoader.getInstance().getRandomSymbolTexture();
+                    }
+                }
+            } else {
+                symbol.position.y -= this.symbolHeight;
+                if (symbol.position.y < 0 - eps) {
+                    symbol.position.y = this.symbols.length * this.symbolHeight - this.symbolHeight;
 
-              }
-          }
-      }
-      // tween.pause();
-  }
+                    if (this.resultReceived) {
+                        const resultTextureId = this.displayResult.shift();
+                        if (resultTextureId !== undefined) {
+                            symbol.sprite.texture = AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1];
+                        }
+                        if (this.displayResult.length === 0) {
+                            this.stopSpinning();
+                        }
+                    } else {
+                        symbol.sprite.texture = AssetLoader.getInstance().getRandomSymbolTexture();
+                    }
+
+                }
+            }
+        }
+        // tween.pause();
+    }
 
   public stopSpinning() {
     this.needsToStop = true;
@@ -212,7 +195,6 @@ private loopReel() {
         // and we loop the last symbol to be visible at the top (without resetting the animation)
         if (!this.backoutStarted && this.position.y >= this.symbolHeight) {
           this.resultReceived = false;
-
 
           this.loopReel();
           for (const symbol of this.symbols) {
@@ -247,6 +229,9 @@ private loopReel() {
     this.resultReceived = false;
 
     this.emit(ReelEvents.stoppedSpinning);
+    // if (this.resultReceived) {
+    //   this.emit(ReelEvents.stoppedSpinning)
+    // }
   }
 
   public stopWithResult(result: number[]) {
@@ -273,19 +258,76 @@ private loopReel() {
   public showWinLines(winLine: number) {
     console.log('  Reel', this.id, 'showWinLines', winLine);
 
-    this.symbols.forEach((symbol) => {
+    let winSymbolsShownCount = 0;
+    const winSymbols = this.symbols.filter((symbol) => {
       const symbolAtPosition = Math.floor(symbol.y / this.symbolHeight) + 1;
-      // console.log(symbol.id, symbolAtPosition, symbol.y);
-      if (symbolAtPosition === winLine) {
-        gsap.to(symbol, {
-          alpha: 0.65,
-          duration: 250,
-          repeat: 3,
-          yoyo: true,
-          ease: "power1.inOut"
-        });
-      }
+      return symbolAtPosition === winLine;
     });
 
+    winSymbols.forEach((symbol) => {
+
+      gsap.to(symbol.scale, {
+        x: symbol.scale.x * 1.1,
+        y: symbol.scale.y * 1.1,
+        duration: 250,
+        yoyo: true,
+        repeat: 1,
+        ease: "power1.inOut"
+      });
+
+      gsap.to(symbol, {
+        alpha: 0.65,
+        duration: 250,
+        repeat: 3,
+        yoyo: true,
+        ease: "power1.inOut",
+      }).then(() => {
+        // console.warn('  ReelSymbol ', symbol.id, 'winLineShown');
+        winSymbolsShownCount++;
+        if (winSymbolsShownCount === winSymbols.length) {
+          // console.warn('  ReelSymbol ', symbol.id, 'winLineShown');
+          this.emit(ReelEvents.winLineShown, winLine);
+        }
+      });
+    });
+
+  }
+
+  /* !!! */
+
+  private createSymbols() {
+    console.log(' Reel createSymbols');
+
+    this.symbols = Array.from(
+      // while animating, we see two halves of 2 different symbols on the top and bottom, so it +1 symbols in total
+      {length: this.config.symbolsPerReel + 1},
+      (_, index) => {
+        return new ReelSymbol(
+          AssetLoader.getInstance().getRandomSymbolTexture(),
+          this.symbolWidth,
+          this.symbolHeight,
+          parseInt(this.id + '' + index)
+        )
+      }
+    );
+
+    for (const symbol of this.symbols) {
+      symbol.y = -1 * this.symbolHeight;
+      this.addChild(symbol);
+    }
+
+    this.positionSymbols();
+  }
+
+  private positionSymbols() {
+    console.log(' Reel positionSymbols');
+    for (const [i, symbol] of this.symbols.entries()) {
+      // the first symbol is actually placed above the reel area so while moving down there won't be a blank space
+      if (this.spinDirection === ReelSpinDirection.down) {
+        symbol.y = (i - 1) * this.symbolHeight;
+      } else {
+        symbol.y = (i) * this.symbolHeight;
+      }
+    }
   }
 }

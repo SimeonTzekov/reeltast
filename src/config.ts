@@ -5,7 +5,7 @@
 
 export const gameConfig = {
   assets: {
-    symbols: ["cherry.png", "plum.jpg", "orange.jpg"],
+    symbols: ["cherry.png", "plum.png", "orange.png", "apple.png", "grapes.png", "watermelon.png"],
     spinButton: "spin.png",
     stopButton: "stop.png",
   },
@@ -19,7 +19,7 @@ export const gameConfig = {
   stopDelay: 40, // time to first reel stop, ms
   stopInterval: 40, // time between reel stops, ms
   startInterval: 40, // time between reel starts, ms
-  autoStopTimeout: 2000, // time to auto stop spin, ms
+  autoStopTimeout: 1000, // time to auto stop spin, ms
 };
 
 export type GameConfig = typeof gameConfig;
@@ -38,12 +38,12 @@ export const mockResults = [
   },
   {
     reelResults: [
-      [1, 2, 3, 1],
-      [1, 2, 3, 2],
-      [1, 1, 3, 3],
-      [1, 2, 3, 1],
-      [1, 2, 3, 2],
-      [1, 3, 3, 3],
+      [1, 5, 4, 1],
+      [1, 4, 4, 5],
+      [1, 1, 4, 3],
+      [1, 2, 4, 1],
+      [1, 6, 4, 6],
+      [1, 3, 4, 3],
     ],
     winLines: [1, 3]
   },
@@ -71,12 +71,12 @@ export const mockResults = [
   },
   {
     reelResults: [
-      [ 1, 3, 1, 2],
-      [ 2, 3, 1, 1],
-      [ 3, 3, 1, 3],
-      [ 1, 2, 1, 3],
-      [ 2, 3, 1, 2],
-      [ 3, 3, 1, 3],
+      [ 1, 3, 5, 2],
+      [ 2, 3, 5, 1],
+      [ 3, 3, 5, 3],
+      [ 1, 2, 5, 3],
+      [ 2, 3, 5, 2],
+      [ 3, 3, 5, 3],
     ],
     winLines: [3]
   },

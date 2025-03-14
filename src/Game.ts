@@ -6,16 +6,15 @@ import { ReelArea, ReelAreaEvents } from "./ReelArea";
 import { SpinButton } from "./SpinButton";
 import { StopButton } from "./StopButton";
 
-
-
 export class Game extends Container {
   private spinButton: SpinButton;
   private stopButton: StopButton;
   private reelArea: ReelArea;
   private resultState: MockResult | null = null;
-  private uiDebugBtns: { [key: string]: Element } = {};
+  private uiDebugBtns: { [key: string]: { [key: string]: Element } } = {};
 
   constructor(config: GameConfig) {
+    console.log('new Game', config);
     super();
 
     const reelArea = new ReelArea(config);
@@ -56,12 +55,10 @@ export class Game extends Container {
 
     reelArea.on(ReelAreaEvents.allStoppedSpinning, () => {
       console.warn('Game ReelAreaEvent allStoppedSpinning');
-      this.showSpinButton();
-      this.spinButton.enable();
-      console.log(this.resultState);
+      // this.showSpinButton();
+      // this.spinButton.enable();
 
       if (this.resultState) {
-        console.log( this.resultState.winLines );
         if (this.resultState.winLines.length) {
           reelArea.showWinLines(this.resultState.winLines);
         }
@@ -73,41 +70,66 @@ export class Game extends Container {
     reelArea.on(ReelAreaEvents.allStartedSpinning, () => {
       console.warn('Game ReelAreaEvent allStartedSpinning');
       this.stopButton.enable();
-      console.log(this.resultState);
+    });
+
+    reelArea.on(ReelAreaEvents.allStartedStoppingWithResult, () => {
+      console.warn('Game ReelAreaEvent allStartedStoppingWithResult');
+      // this.resultState = null;
+      // this.stopButton.enable();
+      // console.log(this.resultState);
+      // this.stopButton.disable();
+      this.spinButton.disable();
+      this.showSpinButton();
     });
 
     reelArea.on(ReelAreaEvents.allStoppedWithResult, () => {
       console.warn('Game ReelAreaEvent allStoppedWithResult');
+
+      if (this.resultState?.winLines.length === 0) {
+        this.showSpinButton();
+        this.spinButton.enable();
+      }
       // this.resultState = null;
       // this.stopButton.enable();
-      console.log(this.resultState);
+      // console.log(this.resultState);
     });
 
-    this.uiDebugBtns = {
-      "btnSetDirectionUP": document.getElementById('btnSetDirectionUP')!,
-      "btnSetDirectionDOWN": document.getElementById('btnSetDirectionDOWN')!,
-      "btnSetDirectionUPDOWN": document.getElementById('btnSetDirectionUPDOWN')!,
-    }
+    reelArea.on(ReelAreaEvents.allWinLinesShown, () => {
+      console.warn('Game ReelAreaEvent allLinesShown');
+      // this.resultState = null;
+      // this.stopButton.enable();
+      // console.log(this.resultState);
+      this.showSpinButton();
+      this.spinButton.enable();
 
-    for (const key in this.uiDebugBtns) {
-      if (Object.prototype.hasOwnProperty.call(this.uiDebugBtns, key)) {
-        const btn = this.uiDebugBtns[key];
-        console.log(key, btn);
-        btn.addEventListener('click', () => {
-          // console.log('btn', key, btn);
-          // console.log(this)
-          reelArea.setDirection( key.replace('btnSetDirection', '') );
-        });
+    });
+
+    this.initDebugBtns();
+  }
+
+  private initDebugBtns() {
+    console.log('Game initDebugBtns');
+    this.uiDebugBtns = {
+      direction: {
+        "btnSetDirectionUP": document.getElementById('btnSetDirectionUP')!,
+        "btnSetDirectionDOWN": document.getElementById('btnSetDirectionDOWN')!,
+        "btnSetDirectionUPDOWN": document.getElementById('btnSetDirectionUPDOWN')!,
       }
     }
 
-    /*this.uiDebugBtns.forEach((btn, key) => {
-
-      btn.addEventListener('click', () => {
-        console.log('btn', key);
-        // reelArea.setDirection( key );
-      });
-    });*/
+    for (const groupKey in this.uiDebugBtns) {
+      const group = this.uiDebugBtns[groupKey];
+      console.log('', groupKey);
+      for (const btnKey in group) {
+        const btn = group[btnKey];
+        console.log(' ', btnKey, btn);
+        if (groupKey === 'direction') {
+          btn.addEventListener('click', () => {
+            this.reelArea.setDirection( btnKey.replace('btnSetDirection', '') );
+          });
+        }
+      }
+    }
 
     /*setTimeout(()=>{
       reelArea.startSpinning();
@@ -118,6 +140,7 @@ export class Game extends Container {
         this.mockResult( mockResults[ 0 ] );
       }, 2000);
     }, 1000);*/
+
   }
 
   private mockResult(resultState: MockResult) {

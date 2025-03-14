@@ -5,14 +5,20 @@ import { gameConfig } from "./config";
 import { AssetLoader } from "./AssetLoader";
 import { Game } from "./Game";
 
+declare global {
+  interface Window {
+    __PIXI_APP__: import("pixi.js").Application<HTMLCanvasElement>;
+  }
+}
 async function main() {
   gsap.ticker.remove(gsap.updateRoot);
 
   const app = new Application<HTMLCanvasElement>({
     width: window.innerWidth,
     height: window.innerHeight,
-    // background: 0xffffff,
   });
+
+  window.__PIXI_APP__ = app;
 
   await AssetLoader.getInstance().load(gameConfig);
 

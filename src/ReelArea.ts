@@ -8,19 +8,29 @@ export enum ReelAreaEvents {
   allStartedSpinning = "allStartedSpinning",
   allStoppedSpinning = "allStoppedSpinning",
   allStoppedWithResult = "allStoppedWithResult",
+  allStartedStoppingWithResult = "allStartedStoppingWithResult",
+  allWinLinesShown = "allWinLinesShown",
 }
 
 export class ReelArea extends Container {
-  private reels: Reel[];
+  private readonly config: GameConfig;
+  private reels: Reel[] = [];
   private reelsFinishedSpinningCount = 0;
   private reelsFinishedWithResultCount = 0;
+  // private winLinesShownCount = 0;
+  private winLinesShown: number[] = [];
+  private resultDisplayed = false;
   private readonly stopDelay: number;
   private readonly stopInterval: number;
   private readonly startInterval: number;
+  private resultState: MockResult | null = null;
+  private reelsContainer: Container | null = null;
 
   constructor(config: GameConfig) {
     console.log(' new ReelArea', config);
     super();
+
+    this.config = config;
 
     this.stopDelay = config.stopDelay;
     this.stopInterval = config.stopInterval;
@@ -44,29 +54,7 @@ export class ReelArea extends Container {
         )
     );
 
-    // const symbolWidth = config.reelAreaWidth / config.reelsCount;
-    const symbolWidth = 133;
-
-    this.reels = Array.from(
-      { length: config.reelsCount },
-      (_, index) => new Reel(config, index + 1)
-    );
-
-    for (const [i, reel] of this.reels.entries()) {
-      reel.position.x = i * symbolWidth;
-      this.addChild(reel);
-    }
-
-    for (const reel of this.reels) {
-      reel.on(ReelEvents.stoppedSpinning, () => {
-        this.reelsFinishedSpinningCount++;
-        if (this.reelsFinishedSpinningCount === this.reels.length) {
-          this.emit(ReelAreaEvents.allStoppedSpinning);
-        }
-      });
-    }
-
-    this.setDirection('UPDOWN')
+    this.createReels();
   }
 
   public override on(
@@ -77,6 +65,7 @@ export class ReelArea extends Container {
   }
 
   public startSpinning() {
+    console.log(' ReelArea startSpinning');
     /*if (this.reels.length * this.startInterval > this.stopDelay) {
       throw new Error(
         `Invalid config: reels start after stop delay (${this.reels.length}*${this.startInterval} > ${this.stopDelay})`
@@ -84,6 +73,7 @@ export class ReelArea extends Container {
     }*/
 
     this.reelsFinishedSpinningCount = 0;
+    this.resultDisplayed = false;
 
     for (const [i, reel] of this.reels.entries()) {
       gsap.delayedCall(i * this.startInterval, () => {
@@ -111,13 +101,15 @@ export class ReelArea extends Container {
 
   public stopWithResult(result: MockResult) {
     console.log(' ReelArea stopWithResult', result);
+    this.resultState = result;
+
     for (const [i, reel] of this.reels.entries()) {
       gsap.delayedCall(i * this.stopInterval + this.stopDelay, () => {
         reel.stopWithResult(result.reelResults[i]);
       }).then(() => {
           this.reelsFinishedWithResultCount++;
           if (this.reelsFinishedWithResultCount === this.reels.length) {
-            this.emit(ReelAreaEvents.allStoppedWithResult);
+            this.emit(ReelAreaEvents.allStartedStoppingWithResult);
             this.reelsFinishedWithResultCount = 0;
           }
         }
@@ -160,4 +152,58 @@ export class ReelArea extends Container {
       }
     }
   }
+
+  /* !!! */
+
+  private createReels() {
+    console.log(' ReelArea createSymbols');
+
+    // const symbolWidth = config.reelAreaWidth / config.reelsCount;
+    const symbolWidth = 133;
+    const symbolHeight = 105;
+    this.reelsContainer = new Container();
+    this.reelsContainer.x = symbolWidth / 2;
+    this.reelsContainer.y = symbolHeight / 2;
+    this.addChild(this.reelsContainer);
+
+    this.reels = Array.from(
+      { length: this.config.reelsCount },
+      (_, index) => new Reel(this.config, index + 1)
+    );
+
+    for (const [i, reel] of this.reels.entries()) {
+      reel.position.x = i * symbolWidth;
+      this.reelsContainer.addChild(reel);
+    }
+
+    for (const reel of this.reels) {
+      reel.on(ReelEvents.stoppedSpinning, () => {
+        this.reelsFinishedSpinningCount++;
+        if (this.reelsFinishedSpinningCount === this.reels.length) {
+          this.emit(ReelAreaEvents.allStoppedSpinning);
+          // console.log('!!!!!!', this.resultState)
+          if (this.resultState) {
+            this.emit(ReelAreaEvents.allStoppedWithResult);
+          }
+        }
+      });
+
+      reel.on(ReelEvents.winLineShown, (payload) => {
+        // console.warn('   ReelArea ReelEvent winLinesShown', payload, this.winLinesShown);
+        // console.log(this.resultState?.winLines);
+        if (!this.resultDisplayed && !this.winLinesShown.includes(payload)) {
+          this.winLinesShown.push(payload);
+        }
+        if (this.winLinesShown.length === this.resultState?.winLines.length) {
+          this.emit(ReelAreaEvents.allWinLinesShown);
+          this.winLinesShown = [];
+          this.resultDisplayed = true;
+        }
+      });
+    }
+
+    // this.setDirection('UPDOWN')
+
+  }
+
 }
