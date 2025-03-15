@@ -8,27 +8,28 @@ import {GameConfig, GameReelingType} from "./config";
 export enum ReelEvents {
   stoppedSpinning = "stoppedSpinning",
   winLineShown = "winLinesShown",
+  symbolsDropFinished = "symbolDropFinished",
 }
 
 export enum ReelSpinDirection {
-    up = -1,
-    down = 1,
+  up = -1,
+  down = 1,
 }
 
 export class Reel extends Container {
-  private symbols: ReelSymbol[] = [];
+  public symbols: ReelSymbol[] = [];
 
   /** if the reel is currently in the stopping animation */
   private stopping = false;
 
   /** if the reel is currently in the backout part of the stopping animation
-      used to loop the reels once when it starts to not show a blank space */
+   used to loop the reels once when it starts to not show a blank space */
   private backoutStarted = false;
 
   /** if the reel needs to stop spinning, it will currently stop on the next loop
-      we use a variable instead of directly stopping for 2 reasons:
-        1. to ensure animation consistency by stopping from the next coming symbol
-        2. to have the possibility to wait for a result before stopping (not implemented in the demo) */
+   we use a variable instead of directly stopping for 2 reasons:
+   1. to ensure animation consistency by stopping from the next coming symbol
+   2. to have the possibility to wait for a result before stopping (not implemented in the demo) */
   private needsToStop = false;
 
   private readonly symbolWidth: number;
@@ -37,16 +38,18 @@ export class Reel extends Container {
   private readonly reelAreaHeight: number;
 
   /** the amount of time it takes one symbol going to go one symbols's height down
-      which is done repeatedly use in the spinning animation */
+   which is done repeatedly use in the spinning animation */
   private readonly spinningTweenDuration: number;
 
   // private spinDirection: ReelSpinDirection = ReelSpinDirection.up;
   private spinDirection: ReelSpinDirection = ReelSpinDirection.down;
   private resultReceived = false;
-  private readonly id: number;
+  public readonly id: number;
 
   private displayResult: number[] = [];
   private config: GameConfig;
+
+  private symbolPositions: number[] = [];
 
   constructor(config: GameConfig, id: number) {
     console.log('   new Reel', id);
@@ -81,95 +84,97 @@ export class Reel extends Container {
     this.needsToStop = false;
     this.resultReceived = false;
     await gsap.to(this.position, {
-        y: this.symbolHeight * this.spinDirection,
-        duration: this.spinningTweenDuration * 2, // will approximately match the linear speed of the spinning, but would be good to calculate it explicitly
-        ease: "power1.in",
+      y: this.symbolHeight * this.spinDirection,
+      duration: this.spinningTweenDuration * 2, // will approximately match the linear speed of the spinning, but would be good to calculate it explicitly
+      ease: "power1.in",
     });
     this.loopReel();
     this.position.y = 0;
 
 
-  // would prefer to use repeat but I think it doesn't work reliably in GSAP - https://github.com/greensock/GSAP/issues/593
-  // this.spinningTween = gsap.to(this.position, {
-  //   startAt: { y: 0 },
-  //   y: this.symbolHeight,
-  //   duration: this.spinningTweenDuration,
-  //   ease: "none",
-  //   repeat: Infinity,
-  //   onRepeat: () => {
-  //     this.loopReel();
-  //   },
-  // });
-  // instead we simulate the above repeat like so:
-  const tween = gsap.to(this.position, {
-    // start animating twice the height and time
-    y: this.symbolHeight * 2 * this.spinDirection,
-    duration: this.spinningTweenDuration * 2,
-    ease: "none",
-    onUpdate: () => {
-      const time = tween.time();
-      // when we cross the spinning duration (and equvalently 1 symbol height)
-      // we loop the reel and restart the animation (accounting for the time passed)
-      if (time > this.spinningTweenDuration) {
-        this.loopReel();
-        tween.time(time % this.spinningTweenDuration, true);
-        if (this.needsToStop) {
-          tween.pause();
-          this.beginStoppingAnimation();
+    // would prefer to use repeat but I think it doesn't work reliably in GSAP - https://github.com/greensock/GSAP/issues/593
+    // this.spinningTween = gsap.to(this.position, {
+    //   startAt: { y: 0 },
+    //   y: this.symbolHeight,
+    //   duration: this.spinningTweenDuration,
+    //   ease: "none",
+    //   repeat: Infinity,
+    //   onRepeat: () => {
+    //     this.loopReel();
+    //   },
+    // });
+    // instead we simulate the above repeat like so:
+    const tween = gsap.to(this.position, {
+      // start animating twice the height and time
+      y: this.symbolHeight * 2 * this.spinDirection,
+      duration: this.spinningTweenDuration * 2,
+      ease: "none",
+      onUpdate: () => {
+        const time = tween.time();
+        // when we cross the spinning duration (and equvalently 1 symbol height)
+        // we loop the reel and restart the animation (accounting for the time passed)
+        if (time > this.spinningTweenDuration) {
+          this.loopReel();
+          tween.time(time % this.spinningTweenDuration, true);
+          if (this.needsToStop) {
+            tween.pause();
+            this.beginStoppingAnimation();
+          }
         }
-      }
-    },
-  });
-}
+      },
+    });
+  }
 
-/** moves all symbols 1 position down, and puts a random symbol on the top
+  /** moves all symbols 1 position down, and puts a random symbol on the top
    when the spinning animation is reset, the reel will go back one place, and the symbols down one place, visually staying in the same place */
   private loopReel() {
-        // console.log('  Reel loopReel', this.spinDirection, this.resultReceived, this.displayResult)
+    // console.log('  Reel loopReel', this.spinDirection, this.resultReceived, this.displayResult)
 
-        const eps = 0.1;
-        for (const symbol of this.symbols) {
-            if (this.spinDirection === ReelSpinDirection.down) {
-                symbol.position.y += this.symbolHeight;
-                // only the last reel will be close to the boundary
-                // we use reuse it as the random symbol and move it to the top
-                if (symbol.position.y >= this.reelAreaHeight - eps) {
-                    symbol.position.y = -this.symbolHeight;
-                    if (this.resultReceived) {
-                        const resultTextureId = this.displayResult.pop();
-                        if (resultTextureId !== undefined) {
-                            symbol.sprite.texture = AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1];
-                        }
-                        if (this.displayResult.length === 0) {
-                          this.stopSpinning();
-                        }
-                    } else {
-                        // symbol.sprite.texture = AssetLoader.getInstance().getRandomSymbolTexture();
-                        symbol.switchTexture(AssetLoader.getInstance().getRandomSymbolTexture());
-                    }
-                }
-            } else {
-                symbol.position.y -= this.symbolHeight;
-                if (symbol.position.y < 0 - eps) {
-                    symbol.position.y = this.symbols.length * this.symbolHeight - this.symbolHeight;
-
-                    if (this.resultReceived) {
-                        const resultTextureId = this.displayResult.shift();
-                        if (resultTextureId !== undefined) {
-                            symbol.sprite.texture = AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1];
-                        }
-                        if (this.displayResult.length === 0) {
-                            this.stopSpinning();
-                        }
-                    } else {
-                        symbol.sprite.texture = AssetLoader.getInstance().getRandomSymbolTexture();
-                    }
-
-                }
+    const eps = 0.1;
+    for (const symbol of this.symbols) {
+      if (this.spinDirection === ReelSpinDirection.down) {
+        symbol.position.y += this.symbolHeight;
+        // only the last reel will be close to the boundary
+        // we use reuse it as the random symbol and move it to the top
+        if (symbol.position.y >= this.reelAreaHeight - eps) {
+          symbol.position.y = -this.symbolHeight;
+          if (this.resultReceived) {
+            const resultTextureId = this.displayResult.pop();
+            if (resultTextureId !== undefined) {
+              // symbol.sprite.texture = AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1];
+              symbol.switchTexture(AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1]);
             }
+            if (this.displayResult.length === 0) {
+              this.stopSpinning();
+            }
+          } else {
+            // symbol.sprite.texture = AssetLoader.getInstance().getRandomSymbolTexture();
+            symbol.switchTexture(AssetLoader.getInstance().getRandomSymbolTexture());
+          }
         }
-        // tween.pause();
+      } else {
+        symbol.position.y -= this.symbolHeight;
+        if (symbol.position.y < 0 - eps) {
+          symbol.position.y = this.symbols.length * this.symbolHeight - this.symbolHeight;
+
+          if (this.resultReceived) {
+            const resultTextureId = this.displayResult.shift();
+            if (resultTextureId !== undefined) {
+              symbol.switchTexture(AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1]);
+              // symbol.sprite.texture = AssetLoader.getInstance().getTexture('symbols')[resultTextureId - 1];
+            }
+            if (this.displayResult.length === 0) {
+              this.stopSpinning();
+            }
+          } else {
+            symbol.switchTexture(AssetLoader.getInstance().getRandomSymbolTexture());
+          }
+
+        }
+      }
     }
+    // tween.pause();
+  }
 
   public stopSpinning() {
     this.needsToStop = true;
@@ -197,11 +202,11 @@ export class Reel extends Container {
 
           this.loopReel();
           for (const symbol of this.symbols) {
-              if (this.spinDirection === ReelSpinDirection.down) {
-                symbol.position.y -= this.symbolHeight;
-              } else {
-                symbol.position.y += this.symbolHeight;
-              }
+            if (this.spinDirection === ReelSpinDirection.down) {
+              symbol.position.y -= this.symbolHeight;
+            } else {
+              symbol.position.y += this.symbolHeight;
+            }
           }
           this.backoutStarted = true;
         }
@@ -234,11 +239,11 @@ export class Reel extends Container {
   }
 
   public stopWithResult(result: number[]) {
-      console.log('  Reel', this.id, 'stopWithResult', result);
+    console.log('  Reel', this.id, 'stopWithResult', result);
 
-      this.resultReceived = true;
-      this.displayResult = result;
-    }
+    this.resultReceived = true;
+    this.displayResult = result;
+  }
 
   public setDirection(direction: ReelSpinDirection) {
     console.log('  Reel', this.id, 'setDirection', direction);
@@ -264,8 +269,7 @@ export class Reel extends Container {
     });
 
     winSymbols.forEach((symbol) => {
-
-     symbol.winAnimation().then(() => {
+      symbol.winAnimation().then(() => {
         // console.warn('  ReelSymbol ', symbol.id, 'winLineShown');
         winSymbolsShownCount++;
         if (winSymbolsShownCount === winSymbols.length) {
@@ -280,8 +284,7 @@ export class Reel extends Container {
   /* !!! */
 
   private createSymbols() {
-    console.log(' Reel createSymbols');
-
+    console.log(' Reel', this.id, 'createSymbols');
 
     this.symbols = Array.from(
       // while animating, we see two halves of 2 different symbols on the top and bottom, so it +1 symbols in total
@@ -301,14 +304,14 @@ export class Reel extends Container {
       this.addChild(symbol);
     }
 
-    if (this.config.reelingType === GameReelingType.Regular) {
+    /*if (this.config.reelingType === GameReelingType.Regular) {
       this.positionSymbols();
     } else {
       this.dropSymbols();
-    }
+    }*/
   }
 
-  private positionSymbols() {
+  public positionSymbols() {
     console.log(' Reel positionSymbols', this.config.reelingType);
 
     if (this.config.reelingType === GameReelingType.Regular) {
@@ -323,12 +326,130 @@ export class Reel extends Container {
     }
   }
 
-  private dropSymbols() {
-    console.log('  Reel dropSymbols');
+  private resetSymbolPosition(symbol: ReelSymbol) {
 
-  const symbolsToDrop = this.symbols.slice(0, this.symbols.length - 1);
+    if (this.spinDirection === ReelSpinDirection.down) {
+      symbol.y = -1 * this.symbolHeight;
+    } else {
+      symbol.y = this.symbols.length * this.symbolHeight;
+    }
+
+    symbol.atPosition = -1;
+
+    symbol.fitTexture();
+  }
+
+  public dropSymbols() {
+    console.log('  Reel', this.id, 'dropSymbols');
+
+    let symbolsDroppedCount = 0;
+
+    const symbolsToDrop = this.symbols.slice(0, this.symbols.length - 1);
     symbolsToDrop.forEach((symbol, i) => {
-      symbol.dropToPosition(symbolsToDrop.length - i - 1, i * 100 );
+      symbol.dropToPosition(symbolsToDrop.length - i, i * 100).then(() => {
+        symbolsDroppedCount++;
+        if (symbolsDroppedCount === symbolsToDrop.length) {
+          console.log('  Reel', this.id, 'dropSymbols finished');
+          this.emit(ReelEvents.symbolsDropFinished);
+        }
+      });
     });
+  }
+
+  public clearPosition(positionIds: number[]) {
+    console.log('  Reel', this.id, 'clearPosition', positionIds);
+
+    const symbolsToClear = this.symbols.filter((symbol) => {
+      // console.log('    ReelSymbol', symbol.id, symbol.atPosition);
+      if (symbol.atPosition) {
+        return positionIds.includes(symbol.atPosition);
+      }
+    });
+
+    symbolsToClear.forEach((symbol) => {
+      console.log('CLEAR    ReelSymbol', symbol.id, symbol.atPosition);
+    });
+
+    /*symbolsToClear.forEach((symbolToClear, index) => {
+      return symbolToClear.clearAnimation().then(() => {
+        console.log('  Reel', this.id, ' ReelSymbol', symbolToClear.id, 'clearPosition finished');
+        // const emptyPosition = symbolToClear.atPosition;
+        // this.resetSymbolPosition(symbolToClear);
+        // this.shiftSymbolsDown(emptyPosition);
+      });
+    });*/
+
+    const clearPromises = symbolsToClear.map((symbolToClear) => {
+      return symbolToClear.clearAnimation().then(() => {
+        console.log('  Reel', this.id, ' ReelSymbol', symbolToClear.id, 'clearPosition finished');
+        // const emptyPosition = symbolToClear.atPosition
+        this.resetSymbolPosition(symbolToClear);
+      });
+    });
+
+    return Promise.all(clearPromises).then(() => {
+      console.log('All clear animations finished');
+      this.shiftSymbolsDown(positionIds.length);
+    });
+
+  }
+
+  public shiftSymbolsDown(emptyPosition: number | null) {
+    console.warn('  Reel', this.id, 'shiftSymbolsDown', emptyPosition);
+
+    let symbolsShiftedCount = 0;
+
+    [1, 2, 3, 4].reverse().forEach((position) => {
+      const symbol = this.symbols.find((symbol) => symbol.atPosition === position);
+      console.log('    ReelSymbol at POS', position, symbol?.id);
+
+      /*if (!symbol) {
+        let prevSymbol: ReelSymbol | undefined;
+        let counter = 0;
+        while (!prevSymbol && counter < 50) {
+          prevSymbol = this.symbols.find((symbol) => symbol.atPosition === position - counter);
+          counter++
+        }
+        // let prevSymbol = this.symbols.find((symbol) => symbol.atPosition === position - 1);
+        console.log('emptyPosition', position, 'prevSymbol', prevSymbol?.id);
+
+        if (prevSymbol) {
+          this.shiftSymbolDown(prevSymbol);
+          symbolsShiftedCount++;
+        }
+      }*/
+    });
+
+
+  }
+
+  public shiftSymbolDown(symbolToShift: ReelSymbol, count: number = 1) {
+    console.warn('  Reel', this.id, 'shiftSymbolDown', symbolToShift?.id);
+
+    if (symbolToShift.atPosition !== null) {
+      symbolToShift.atPosition += count;
+      symbolToShift.dropToPosition(symbolToShift.atPosition);
+    }
+
+
+  }
+
+  public dropSymbolDown(emptyPosition: number | null) {
+    console.warn('\n\n  Reel', this.id, 'shiftSymbolDown', emptyPosition);
+
+    for (const [i, symbol] of this.symbols.entries()) {
+      console.log('    ReelSymbol shiftSymbolsDown', symbol.id, symbol.atPosition);
+
+      if (symbol.atPosition !== null && emptyPosition !== null && symbol.atPosition < emptyPosition) {
+        symbol.atPosition++;
+        symbol.dropToPosition(symbol.atPosition, i * 50);
+      } else {
+        if (symbol.atPosition === null && emptyPosition) {
+          symbol.dropToPosition(1, i * 50);
+          // symbol.dropToPosition(1, 0);
+        }
+      }
+
+    }
   }
 }

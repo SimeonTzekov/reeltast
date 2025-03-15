@@ -25,8 +25,9 @@ export const gameConfig = {
   spinButtonSize: 150, // px
   spinningSpeed: 3, // full reel rotations per second
   stopDelay: 40, // time to first reel stop, ms
-  stopInterval: 40, // time between reel stops, ms
-  startInterval: 40, // time between reel starts, ms
+  stopInterval: 400, // time between reel stops, ms
+  startInterval: 400, // time between reel starts, ms
+  dropInterval: 40, // time between reel symbol drops, ms
   autoStopTimeout: 1000, // time to auto stop spin, ms
 };
 

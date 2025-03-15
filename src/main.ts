@@ -10,17 +10,22 @@ declare global {
     __PIXI_APP__: import("pixi.js").Application<HTMLCanvasElement>;
   }
 }
+
+
 async function main() {
   gsap.ticker.remove(gsap.updateRoot);
 
   const app = new Application<HTMLCanvasElement>({
     width: window.innerWidth,
     height: window.innerHeight,
+    backgroundAlpha: 0,
   });
 
   window.__PIXI_APP__ = app;
 
   await AssetLoader.getInstance().load(gameConfig);
+
+  // return;
 
   const game = new Game(gameConfig);
 

@@ -1,9 +1,10 @@
 import gsap from "gsap";
 import {Container, Graphics} from "pixi.js";
 
-import {GameConfig} from "./config";
+import {GameConfig, GameReelingType} from "./config";
 import {Reel, ReelEvents, ReelSpinDirection} from "./Reel";
 import {MockResult} from "./mockResults.ts";
+import {getRandomInt} from "./utils.ts";
 
 export enum ReelAreaEvents {
   allStartedSpinning = "allStartedSpinning",
@@ -11,6 +12,7 @@ export enum ReelAreaEvents {
   allStoppedWithResult = "allStoppedWithResult",
   allStartedStoppingWithResult = "allStartedStoppingWithResult",
   allWinLinesShown = "allWinLinesShown",
+  allSymbolsDropped = "allSymbolsDropped",
 }
 
 export class ReelArea extends Container {
@@ -18,6 +20,7 @@ export class ReelArea extends Container {
   private reels: Reel[] = [];
   private reelsFinishedSpinningCount = 0;
   private reelsFinishedWithResultCount = 0;
+  private reelsFinishedDroppingCount = 0;
   // private winLinesShownCount = 0;
   private winLinesShown: number[] = [];
   private resultDisplayed = false;
@@ -53,6 +56,13 @@ export class ReelArea extends Container {
           config.reelAreaWidth + 20,
           config.reelAreaHeight + 20
         )
+    );
+
+    this.addChild(
+      new Graphics()
+        .beginFill(0x444444)
+        .drawRect(0, 0, config.reelAreaWidth, config.reelAreaHeight)
+        .endFill()
     );
 
     this.createReels();
@@ -174,9 +184,19 @@ export class ReelArea extends Container {
       (_, index) => new Reel(this.config, index + 1)
     );
 
+    this.reelsFinishedDroppingCount = 0;
+
     for (const [i, reel] of this.reels.entries()) {
       reel.position.x = i * symbolWidth;
       this.reelsContainer.addChild(reel);
+
+      if (this.config.reelingType === GameReelingType.Regular) {
+        reel.positionSymbols();
+      } else {
+        gsap.delayedCall(i * this.config.dropInterval, () => {
+          reel.dropSymbols();
+        });
+      }
     }
 
     for (const reel of this.reels) {
@@ -190,11 +210,11 @@ export class ReelArea extends Container {
         }
       });
 
-      reel.on(ReelEvents.winLineShown, (payload) => {
-        // console.warn('   ReelArea ReelEvent winLinesShown', payload, this.winLinesShown);
+      reel.on(ReelEvents.winLineShown, (winLineId) => {
+        // console.warn('   ReelArea ReelEvent winLinesShown', winLineId, this.winLinesShown);
         // console.log(this.resultState?.winLines);
-        if (!this.resultDisplayed && !this.winLinesShown.includes(payload)) {
-          this.winLinesShown.push(payload);
+        if (!this.resultDisplayed && !this.winLinesShown.includes(winLineId)) {
+          this.winLinesShown.push(winLineId);
         }
         if (this.winLinesShown.length === this.resultState?.winLines.length) {
           this.emit(ReelAreaEvents.allWinLinesShown);
@@ -202,8 +222,73 @@ export class ReelArea extends Container {
           this.resultDisplayed = true;
         }
       });
+
+      reel.on(ReelEvents.symbolsDropFinished, () => {
+        // console.warn('   ReelArea ReelEvent symbolsDropFinished', this.reelsFinishedDroppingCount, reelId, this.reels.length);
+        this.reelsFinishedDroppingCount++;
+        if (this.reelsFinishedDroppingCount === this.reels.length) {
+          this.emit(ReelAreaEvents.allSymbolsDropped);
+          this.reelsFinishedDroppingCount = 0;
+        }
+      });
     }
 
+  }
+
+  public clearSymbol( symbolId: number ) {
+    console.log(' ReelArea clearSymbol', symbolId);
+
+    for (const reel of this.reels) {
+
+      console.log('>>>', reel.id);
+
+      for (const symbol of reel.symbols) {
+        console.log('>>>>>', symbol.id, symbol.symbolId, symbol.atPosition);
+        if (symbol.symbolId === symbolId && symbol.atPosition !== null) {
+          console.log('>>>>>>>>> clear');
+          reel.clearPosition([symbol.atPosition]);
+          //   symbol.clear();
+        }
+      }
+
+      // reel.clearPosition( symbolId );
+    }
+  }
+
+
+
+
+  /* !!!!!!!!!!!!!!! */
+  public debugReels() {
+    console.clear();
+    console.log(' ReelArea debugReels');
+
+    // this.clearSymbol(3);
+    // this.clearSymbol(2);
+
+    // const reel = this.reels[0];
+
+    // this.reels[0].clearPosition(1);
+    this.reels[0].clearPosition([3,4]);
+    // this.reels[0].clearPosition([4]);
+    // this.reels[0].clearPosition(4);
+    // this.reels[1].clearPosition(2);
+
+    // console.log(reel)
+
+    for (const [i, reel] of this.reels.entries()) {
+      // console.log(i, reel);
+
+      // reel.clearPosition( getRandomInt(1,2) );
+      // reel.clearPosition( getRandomInt(3,4) );
+      // reel.clearPosition( 1 );
+      // reel?.clearPosition( 2 ).then(()=>{
+      //   reel.clearPosition( 4 );
+      // });
+      // reel.clearPosition( 3 );
+      // reel.clearPosition( 4 );
+
+    }
   }
 
 }

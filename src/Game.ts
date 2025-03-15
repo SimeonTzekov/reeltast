@@ -64,7 +64,18 @@ export class Game extends Container {
       this.spinButton.enable();
     });
 
-    // this.initDebugBtns();
+    reelArea.on(ReelAreaEvents.allSymbolsDropped, () => {
+      console.warn('   Game ReelAreaEvent allSymbolsDropped');
+
+      /* debug */
+      setTimeout(()=> {
+        reelArea.debugReels();
+      }, 200);
+      /* debug */
+
+    });
+
+    this.initDebugBtns();
   }
 
   private initUIButtons() {

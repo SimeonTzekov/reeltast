@@ -2,13 +2,15 @@ import { Assets, Texture } from "pixi.js";
 
 import { GameConfig } from "./config";
 
+export type LoadedTexture = { texture: Texture, symbolId: number };
+
 export class AssetLoader {
   private static instance: AssetLoader;
 
   private loadedTextures?: {
     [K in keyof GameConfig["assets"]]: GameConfig["assets"][K] extends Array<unknown>
-      ? Texture[]
-      : Texture;
+      ? LoadedTexture[]
+      : LoadedTexture;
   };
 
   private constructor() {
@@ -27,12 +29,10 @@ export class AssetLoader {
     return AssetLoader.instance;
   }
 
-  async load(gameConfig: GameConfig) {
-    this.loadedTextures = Object.fromEntries(
-      await Promise.all(
-        Object.entries(gameConfig.assets).map(
+  /*Object.entries(gameConfig.assets).map(
           async ([name, assetPathOrPaths]) => {
             if (Array.isArray(assetPathOrPaths)) {
+              console.warn('   AssetLoader load', name, assetPathOrPaths);
               return [
                 name,
                 await Promise.all(
@@ -40,12 +40,40 @@ export class AssetLoader {
                 ),
               ];
             } else {
+              console.warn('   AssetLoader load', name, assetPathOrPaths);
+              return [name, await Assets.load(assetPathOrPaths)];
+            }
+          }
+        )*/
+
+  async load(gameConfig: GameConfig) {
+    console.log('   AssetLoader load', gameConfig);
+    this.loadedTextures = Object.fromEntries(
+      await Promise.all(
+        Object.entries(gameConfig.assets).map(
+          async ([name, assetPathOrPaths]) => {
+            if (Array.isArray(assetPathOrPaths)) {
+              console.warn('   AssetLoader load', name, assetPathOrPaths);
+              return [
+                name,
+                await Promise.all(
+                  assetPathOrPaths.map(async (assetPath, index) => ({
+                    texture: await Assets.load(assetPath),
+                    symbolId: index
+                  } as LoadedTexture))
+                ),
+              ];
+            } else {
+              console.warn('   AssetLoader load', name, assetPathOrPaths);
               return [name, await Assets.load(assetPathOrPaths)];
             }
           }
         )
       )
     );
+
+    console.log('   AssetLoader load done', this.loadedTextures);
+
   }
 
   getRandomSymbolTexture() {
@@ -55,9 +83,8 @@ export class AssetLoader {
 
     const symbols = this.loadedTextures.symbols;
     let randomIndex = Math.floor(Math.random() * symbols.length);
-    /*while ( randomIndex === 0 ) {
-        randomIndex = Math.floor(Math.random() * symbols.length);
-    }*/
+
+    // console.warn('symbols[randomIndex]', symbols[randomIndex])
 
     return symbols[randomIndex];
   }
