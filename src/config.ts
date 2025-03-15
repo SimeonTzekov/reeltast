@@ -8,7 +8,7 @@ export enum GameReelingType {
   Tumbling = "Tumbling"
 }
 
-const reelsCount = 1;
+const reelsCount = 6;
 
 export const gameConfig = {
   assets: {

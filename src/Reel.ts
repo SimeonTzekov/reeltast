@@ -394,15 +394,33 @@ export class Reel extends Container {
 
   }
 
-  public shiftSymbolsDown(emptyPosition: number | null) {
-    console.warn('  Reel', this.id, 'shiftSymbolsDown', emptyPosition);
+  private getReadySymbol() {
+    // console.warn('  Reel', this.id, 'getReadySymbol');
+    const readySymbol = this.symbols.find((symbol) => (symbol.atPosition === null || symbol.atPosition === -1));
+    return readySymbol;
+  }
+
+  public shiftSymbolsDown() {
+    console.clear();
+    console.log('  Reel', this.id, 'shiftSymbolsDown');
 
     let symbolsShiftedCount = 0;
+    const reelSlots: ReelSymbol[] | null [] = [];
+    let emptyPosCount = 0;
 
+    // [1, 2, 3, 4].reverse().forEach((position) => {
     [1, 2, 3, 4].reverse().forEach((position) => {
       const symbol = this.symbols.find((symbol) => symbol.atPosition === position);
-      console.log('    ReelSymbol at POS', position, symbol?.id);
-
+      // console.log('    ReelSymbol at POS', position, symbol?.id);
+      if (symbol) {
+        console.log('pos', position, '      filled slot', symbol?.id, symbol?.atPosition, 'emptyPosCount', emptyPosCount);
+        reelSlots[position] = symbol;
+        this.shiftSymbolDown(symbol, emptyPosCount);
+      } else {
+        console.log('pos', position, '      empty slot', position);
+        reelSlots[position] = null;
+        emptyPosCount++;
+      }
       /*if (!symbol) {
         let prevSymbol: ReelSymbol | undefined;
         let counter = 0;
@@ -420,17 +438,49 @@ export class Reel extends Container {
       }*/
     });
 
+    [1, 2, 3, 4].reverse().forEach((position) => {
+      const symbol = this.symbols.find((symbol) => symbol.atPosition === position);
+      // console.log('    ReelSymbol at POS', position, symbol?.id);
+      if (symbol) {
+        reelSlots[position] = symbol;
+      } else {
+        reelSlots[position] = null;
+      }
+    });
+
+    console.log('---------------------------------');
+
+    let dropSymbolsCount = 0;
+    reelSlots.reverse().forEach((reelSymbol, pos) => {
+      console.log('---', pos, reelSymbol?.id);
+      // console.log('pos', pos, reelSymbol?.id,   );
+      if (reelSymbol === null) {
+        const readySymbol = this.getReadySymbol();
+        console.log('      empty slot', pos, 'readySymbol:', readySymbol?.id, readySymbol?.atPosition);
+        // console.log('pos', pos, '      empty slot');
+        // emptyPosCount++;
+        if (readySymbol) {
+          // console.log('readySymbol', readySymbol?.id, readySymbol?.atPosition );
+          // readySymbol.posToGo = emptyPosCount;
+          // gsap.delayedCall((1 - dropSymbolsCount) * 1000, () => {
+          //   this.shiftSymbolDown(readySymbol, pos);
+          // })
+          readySymbol.atPosition = pos;
+          readySymbol.dropToPosition(4 - pos, ( dropSymbolsCount ) * 150);
+          dropSymbolsCount++;
+        }
+      }
+    });
 
   }
 
   public shiftSymbolDown(symbolToShift: ReelSymbol, count: number = 1) {
-    console.warn('  Reel', this.id, 'shiftSymbolDown', symbolToShift?.id);
+    console.log('  Reel', this.id, 'shiftSymbolDown', symbolToShift?.id);
 
     if (symbolToShift.atPosition !== null) {
       symbolToShift.atPosition += count;
       symbolToShift.dropToPosition(symbolToShift.atPosition);
     }
-
 
   }
 

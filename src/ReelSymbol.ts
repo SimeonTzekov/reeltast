@@ -10,6 +10,7 @@ export class ReelSymbol extends Container {
   public atPosition: number | null = null;
   private dim: { width: number; height: number } = {width: 0, height: 0};
   public symbolId: number | null = null;
+  public posToGo: number | undefined | null = null;
 
   constructor(texture: LoadedTexture, width: number, height: number, id: number) {
     console.log('    new ReelSymbol', id, `w: ${width}, h: ${height}`);

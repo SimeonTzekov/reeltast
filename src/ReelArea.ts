@@ -269,8 +269,20 @@ export class ReelArea extends Container {
     // const reel = this.reels[0];
 
     // this.reels[0].clearPosition(1);
-    this.reels[0].clearPosition([3,4]);
-    // this.reels[0].clearPosition([4]);
+
+    // this.reels.forEach((reel) => {
+    //   reel.clearPosition(
+    //     Array.from({ length: getRandomInt(1, 4) }, () => getRandomInt(1, 4))
+    //   )
+    // });
+
+    // this.reels[ getRandomInt( 0, this.reels.length-1 ) ].clearPosition([4,2,1]);
+    this.reels[0].clearPosition([1]);
+    this.reels[1].clearPosition([1,4]);
+    this.reels[2].clearPosition([2,3, 4]);
+    this.reels[3].clearPosition([1,2,3,4]);
+    this.reels[4].clearPosition([4]);
+    this.reels[5].clearPosition([3]);
     // this.reels[0].clearPosition(4);
     // this.reels[1].clearPosition(2);
 
