@@ -260,10 +260,10 @@ export class ReelArea extends Container {
 
   /* !!!!!!!!!!!!!!! */
   public debugReels() {
-    console.clear();
+    // console.clear();
     console.log(' ReelArea debugReels');
 
-    // this.clearSymbol(3);
+    // this.clearSymbol(5);
     // this.clearSymbol(2);
 
     // const reel = this.reels[0];
@@ -277,12 +277,12 @@ export class ReelArea extends Container {
     // });
 
     // this.reels[ getRandomInt( 0, this.reels.length-1 ) ].clearPosition([4,2,1]);
-    this.reels[0].clearPosition([1]);
-    this.reels[1].clearPosition([1,4]);
-    this.reels[2].clearPosition([2,3, 4]);
-    this.reels[3].clearPosition([1,2,3,4]);
-    this.reels[4].clearPosition([4]);
-    this.reels[5].clearPosition([3]);
+    // this.reels[0].clearPosition([1]);
+    // this.reels[1].clearPosition([1,4]);
+    // this.reels[2].clearPosition([2,3, 4]);
+    // this.reels[3].clearPosition([1,2,3,4]);
+    // this.reels[4].clearPosition([4]);
+    // this.reels[5].clearPosition([3]);
     // this.reels[0].clearPosition(4);
     // this.reels[1].clearPosition(2);
 

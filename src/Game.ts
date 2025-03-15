@@ -6,6 +6,7 @@ import { ReelArea, ReelAreaEvents } from "./ReelArea";
 import { SpinButton } from "./SpinButton";
 import { StopButton } from "./StopButton";
 import { MockResult, mockResults } from "./mockResults.ts";
+import {AssetLoader} from "./AssetLoader.ts";
 
 export class Game extends Container {
   private config: GameConfig;
@@ -120,8 +121,24 @@ export class Game extends Container {
         "btnSetDirectionUP": document.getElementById('btnSetDirectionUP')!,
         "btnSetDirectionDOWN": document.getElementById('btnSetDirectionDOWN')!,
         "btnSetDirectionUPDOWN": document.getElementById('btnSetDirectionUPDOWN')!,
-      }
+      },
+      symbols: {},
     }
+    const symbolButtonsHolder = document.getElementById('clearSymbolButtons')!;
+
+    const loadedSymbolTextures = AssetLoader.getInstance()?.loadedTextures?.['symbols'];
+    loadedSymbolTextures?.forEach((texture, i) => {
+      console.log('initDebugBtns', texture.symbolId, texture.symbolName);
+      const button = this.uiDebugBtns.symbols[`btn-${texture.symbolId}`] = document.createElement('button');
+      button.textContent = texture.symbolId.toString();
+      button.style.backgroundImage = `url(/${texture.symbolName})`;
+
+      button.addEventListener(('click'), () => {
+        this.reelArea.clearSymbol(texture.symbolId);
+      });
+
+      symbolButtonsHolder.appendChild(button);
+    });
 
     for (const groupKey in this.uiDebugBtns) {
       const group = this.uiDebugBtns[groupKey];

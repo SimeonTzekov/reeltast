@@ -2,12 +2,12 @@ import { Assets, Texture } from "pixi.js";
 
 import { GameConfig } from "./config";
 
-export type LoadedTexture = { texture: Texture, symbolId: number };
+export type LoadedTexture = { texture: Texture, symbolId: number, symbolName: string };
 
 export class AssetLoader {
   private static instance: AssetLoader;
 
-  private loadedTextures?: {
+  public loadedTextures?: {
     [K in keyof GameConfig["assets"]]: GameConfig["assets"][K] extends Array<unknown>
       ? LoadedTexture[]
       : LoadedTexture;
@@ -59,7 +59,8 @@ export class AssetLoader {
                 await Promise.all(
                   assetPathOrPaths.map(async (assetPath, index) => ({
                     texture: await Assets.load(assetPath),
-                    symbolId: index
+                    symbolId: index,
+                    symbolName: assetPath
                   } as LoadedTexture))
                 ),
               ];

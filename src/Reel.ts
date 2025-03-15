@@ -336,6 +336,7 @@ export class Reel extends Container {
 
     symbol.atPosition = -1;
 
+    symbol.switchTexture(  AssetLoader.getInstance().getRandomSymbolTexture() );
     symbol.fitTexture();
   }
 
@@ -401,7 +402,7 @@ export class Reel extends Container {
   }
 
   public shiftSymbolsDown() {
-    console.clear();
+    // console.clear();
     console.log('  Reel', this.id, 'shiftSymbolsDown');
 
     let symbolsShiftedCount = 0;

@@ -32,3 +32,11 @@ video {
     margin: 1em;
     z-index: 10;
 }
+
+#clearSymbolButtons button {
+    padding: 1em;
+    width: 5em;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
